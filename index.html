@@ -214,6 +214,43 @@ h2.sec{margin:30px 0 12px}
 .hitem small a,#ic-uphint a{color:var(--accent2)}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .upres .btns{margin-top:0}
+/* ped editor */
+.pe-wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+@media(max-width:1000px){.pe-wrap{grid-template-columns:minmax(0,1fr)}}
+.pe-wrap .panel h2{margin-bottom:12px}
+.pe-side{position:sticky;top:64px}
+@media(max-width:1000px){.pe-side{position:static}}
+.pe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px 14px}
+.pe-feat{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.pe-fbox{background:var(--panel2);border:1px solid var(--line);padding:12px}
+.pe-fbox b{display:block;margin-bottom:8px;font:700 .72rem var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--accent2)}
+.pe-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pe-pair label,.pe-row label,.pe-ov label{font-size:.68rem}
+.pe-row{display:grid;grid-template-columns:150px 1fr 1fr 1.3fr;gap:10px;align-items:end;padding:10px 0;border-top:1px solid var(--line)}
+.pe-row.prop{grid-template-columns:150px 54px 1fr 1fr 1.3fr}
+.pe-nm{font-weight:600;align-self:center}
+.pe-nm small{display:block;color:var(--mute);font:400 .74rem var(--mono)}
+.pe-ov{display:grid;grid-template-columns:24px 140px 1fr 1fr 1fr 1fr;gap:10px;align-items:end;padding:10px 0;border-top:1px solid var(--line)}
+.pe-ov.off .pe-dim{opacity:.35}
+.pe-ov>input[type=checkbox],.pe-row input[type=checkbox]{align-self:center}
+@media(max-width:700px){.pe-row,.pe-row.prop{grid-template-columns:1fr 1fr}.pe-nm{grid-column:1/-1}.pe-ov{grid-template-columns:24px 1fr 1fr}.pe-ov .pe-dim{grid-column:span 1}}
+.pe-col{display:flex;gap:6px}
+.pe-sw{width:34px;flex:none;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+.pe-sw:hover{border-color:var(--accent)}
+#pe-out{min-height:380px;font:.78rem/1.5 var(--mono);background:var(--code);color:var(--code-ink)}
+#pe-paste{min-height:110px;font:.78rem/1.5 var(--mono)}
+.pe-drop{border:2px dashed var(--line);padding:14px;text-align:center;color:var(--mute);font-size:.88rem;margin-bottom:10px}
+.pe-drop.hover{border-color:var(--accent);color:var(--accent2)}
+.pe-pick{display:inline;text-transform:none;letter-spacing:0;font-size:inherit;color:var(--accent2);cursor:pointer;text-decoration:underline}
+.pe-modal{position:fixed;inset:0;z-index:50;background:#000b;display:none;align-items:center;justify-content:center;padding:16px}
+.pe-modal.show{display:flex}
+.pe-modal .panel{max-width:100%;overflow:auto}
+.pe-pgrid{display:grid;grid-template-columns:repeat(15,34px);gap:5px}
+.pe-pgrid div{height:34px;border-radius:3px;cursor:pointer;font:.62rem var(--mono);display:flex;align-items:flex-end;justify-content:flex-end;padding:2px 3px;color:#fff;text-shadow:0 0 3px #000;border:2px solid transparent}
+.pe-pgrid div:hover{border-color:#fff}
+.pe-pgrid div.sel{border-color:var(--accent2)}
+.stat.p::before{background:#c77dff}
+.tag.ped{background:#c77dff22;color:#d9a8ff;border:1px solid #c77dff55}
 </style>
 </head>
 <body>
@@ -245,12 +282,13 @@ h2.sec{margin:30px 0 12px}
         <button type="button" class="small" data-f="all" aria-pressed="true">All</button>
         <button type="button" class="small" data-f="vanity" aria-pressed="false">Vanity JSON</button>
         <button type="button" class="small" data-f="item" aria-pressed="false">Item Created</button>
+        <button type="button" class="small" data-f="ped" aria-pressed="false">Ped Editor</button>
         <button type="button" class="small" id="dash-clear">Clear history</button>
       </div>
     </div>
     <div class="hrow hhead"><div>Type</div><div>Item</div><div>When</div><div>Actions</div></div>
     <div id="dash-list"></div>
-    <p class="empty dash-empty" id="dash-empty">Nothing here yet. Copy some Vanity JSON or download an item and it will show up here.</p>
+    <p class="empty dash-empty" id="dash-empty">Nothing here yet. Copy some Vanity JSON, download an item or copy a ped and it will show up here.</p>
   </div>
   <h2 class="sec">Tools</h2>
   <div class="tools" id="toolList"></div>
@@ -344,6 +382,86 @@ h2.sec{margin:30px 0 12px}
   </div>
 </section>
 
+<!-- PED EDITOR -->
+<section class="page" id="tool-ped" hidden>
+  <h1>Ped Editor</h1>
+  <p class="lead">Build or edit a freemode ped using the numbers from the in-game creator, or import a ped JSON. Copy or download the result in the server's format.</p>
+  <div class="subtabs" id="pe-tabs" role="tablist" aria-label="Model">
+    <button type="button" data-g="male" aria-pressed="true">Male</button>
+    <button type="button" data-g="female" aria-pressed="false">Female</button>
+    <span class="soon" id="pe-model"></span>
+  </div>
+  <div class="pe-wrap">
+    <div>
+      <div class="panel">
+        <h3 style="margin-top:0">Ped name <span class="hint" style="text-transform:none;letter-spacing:0">(only used in Recent tasks)</span></h3>
+        <input type="text" id="pe-name" placeholder="e.g. Penguin" autocomplete="off">
+      </div>
+
+      <div class="panel">
+        <h2>DNA</h2>
+        <div class="pe-grid" id="pe-dna"></div>
+        <p class="hint" style="margin:14px 0 8px">Mixes use the creator's 0 to 100 sliders.</p>
+        <div class="pe-grid" id="pe-mix"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Facial features</h2>
+        <p class="hint" style="margin:0 0 12px">Enter the two small numbers shown top right of each box in the creator: left number, then right number (−100 to 100).</p>
+        <div class="pe-feat" id="pe-feat"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Hair</h2>
+        <div class="pe-grid" id="pe-hair"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Complexion, makeup and facial hair</h2>
+        <p class="hint" style="margin:0 0 6px">Tick to turn an overlay on. Style is the number the creator shows (it counts from 1). Opacity 0 to 100. Colour is the position in the colour grid, counting from 0, left to right, 15 per row. Click a swatch to pick.</p>
+        <div id="pe-ovs"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Clothing</h2>
+        <p class="hint" style="margin:0 0 6px">Component and texture are the creator's numbers. Leave <b>collection</b> blank when using in-game numbers. If you change an imported item that has a pack name in collection, clear its collection.</p>
+        <div id="pe-comps"></div>
+        <div class="btns"><button type="button" class="small" id="pe-clearCol">Clear all collections</button></div>
+      </div>
+
+      <div class="panel">
+        <h2>Props</h2>
+        <p class="hint" style="margin:0 0 6px">Tick None for an empty slot.</p>
+        <div id="pe-props"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Tattoos</h2>
+        <div class="inrow"><span class="hint" id="pe-tatInfo" style="flex:1"></span><button type="button" class="small" id="pe-clearTat">Remove all tattoos</button></div>
+        <p class="hint" style="margin:10px 0 0">Tattoos are kept exactly as imported. Change them in-game, then import again.</p>
+      </div>
+    </div>
+
+    <div class="pe-side">
+      <div class="panel">
+        <h3 style="margin-top:0">Import</h3>
+        <div class="pe-drop" id="pe-drop">Drop a .json file here, or <label class="pe-pick">choose a file<input type="file" id="pe-file" accept=".json,application/json,text/plain" hidden></label></div>
+        <textarea id="pe-paste" placeholder="…or paste ped JSON here"></textarea>
+        <div class="btns"><button type="button" class="main small" id="pe-import">Import pasted JSON</button><button type="button" class="small" id="pe-example">Load example</button><button type="button" class="small" id="pe-blank">Start blank</button></div>
+        <p class="msg" id="pe-msg" role="status"></p>
+      </div>
+      <div class="panel">
+        <h3 style="margin-top:0">Output</h3>
+        <label class="inline" style="margin-bottom:10px"><input type="checkbox" id="pe-pretty"> Pretty print</label>
+        <textarea id="pe-out" readonly spellcheck="false"></textarea>
+        <div class="btns"><button type="button" class="main" id="pe-copy">Copy JSON</button><button type="button" id="pe-dl">Download .json</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pe-modal" id="pe-modal"><div class="panel"><h3 id="pe-palTitle" style="margin-top:0">Pick colour</h3><div class="pe-pgrid" id="pe-pgrid"></div><p class="hint" style="margin:10px 0 0">Colours are approximate. The number is what counts.</p></div></div>
+</section>
+
 </main>
 
 <footer>ProdigyRP DM Toolkit. Created by Pingu.</footer>
@@ -354,13 +472,15 @@ h2.sec{margin:30px 0 12px}
 /* ---------- Registry: one entry per tab ---------- */
 const TOOLS = [
   {id:'vanity', title:'Vanity item JSON', desc:'Build vanity item metadata (label, images, rarity, weight, durability, traits and more) and copy it as ready-to-paste JSON.'},
-  {id:'item', title:'Item Creator', desc:'Design items for your server, starting with cards and keys. Add your logo and text, then download a transparent PNG.'}
+  {id:'item', title:'Item Creator', desc:'Design items for your server, starting with cards and keys. Add your logo and text, then download a transparent PNG.'},
+  {id:'ped', title:'Ped Editor', desc:'Build or edit a male or female freemode ped from the in-game creator numbers, or import a ped JSON, then copy it in the server format.'}
 ];
 
 const ICONS = {
   home:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   vanity:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
   item:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/>',
+  ped:'<circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/>',
   card:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.5-1.5 1.7-2 3-2s2.5.5 3 2M15 10h3M15 13h3"/>'
 };
 const icon = id => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id] || ICONS.home}</svg>`;
@@ -392,7 +512,7 @@ const Hist = (function(){
     all: () => list,
     add(e){
       e.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); e.ts = Date.now();
-      if(e.type === 'vanity'){ const j = JSON.stringify(e.data); list = list.filter(x => !(x.type === 'vanity' && x.name === e.name && x.action === e.action && JSON.stringify(x.data) === j)); }
+      if(e.type === 'vanity' || e.type === 'ped'){ const j = JSON.stringify(e.data); list = list.filter(x => !(x.type === e.type && x.name === e.name && x.action === e.action && JSON.stringify(x.data) === j)); }
       list.unshift(e); list = list.slice(0, MAX); save(); notify();
     },
     remove(id){ list = list.filter(x => x.id !== id); save(); notify(); },
@@ -890,6 +1010,252 @@ function download(name, blob){
   load(); document.addEventListener('dm:route', e => { if(e.detail === 'settings') load(); });
 })();
 
+/* ---------- Ped Editor ---------- */
+const DMPed = (function(){
+  const HAIR_PAL = "1c1f21 272a2c 312e2c 35261c 4b321f 5c3b24 6d4c35 6b503b 765c45 7f684e 99815d a79369 af9c70 bba063 d6b97b dac38e 9f7f59 845039 682b1f 61120c 640f0a 7c140f a02e19 b64b28 a2502f aa4e2b 626262 808080 aaaaaa c5c5c5 463955 5a3f6b 763c76 ed74e3 eb4b93 f299bc 04959e 025f86 023974 3fa16a 217c61 185c55 b6c034 70a90b 439d13 dcb857 e5b103 e69102 f28831 fb8057 e28b58 d1593c ce3120 ad0903 880302 1f1814 291f19 2e221b 37291e 2e2218 231b15 020202 706c66 9d7a50".split(" ");
+  const MAKEUP_PAL = "992532 c8395d bd516c b8637a a6526b b14b55 8a2e34 a96a63 c38f80 d2a69e c9909a ac7062 b0604e a4472f b27077 c88497 f0a5c3 e77aaa e0457e bb4f78 7b2b3e 572233 a52a3a e22a3d d00d1a e95974 dc4dbc c52cb0 a51faa 6f2077 7c1a78 5b1866 7720a5 1f3473 2452ad 2381c1 25a8d2 27c3d4 28d1af 28c27b 1d9e35 148a00 6dd43c c3e82d e3e02d fede2d fec131 fd8d2f fe5c12 bd701f f6c97f fbe3c1 f5f5f5 b3b3b3 919191 544d4d 160c0c 5c9aa0 4a6c8e 1a2950 a17e6e 816255 6e5446 3e2c27".split(" ");
+  const SAVED = {"faceFeatures":{"0":-0.25,"1":0,"2":0,"3":0.35,"4":0,"5":0,"6":-0.29,"7":0,"8":-0.5,"9":-0.53,"10":-1,"11":-0.54,"12":-0.3,"13":-0.14,"14":0.16,"15":0.64,"16":-0.17,"17":0,"18":-1,"19":1},"hairColor":{"highlightColorId":60,"colorId":61},"tattoos":{"1841427399":{"1167984459":1},"598190139":{"3166827769":10},"1099237437":{"1915734436":1},"1926256505":{"257911811":1,"2209775669":1},"601646824":{"2785157248":10},"2437626283":{"1802999672":10,"671777576":1,"4251607248":1},"2199352945":{"4109196839":1},"3319439855":{"1963590204":10},"987639353":{"1978806367":1},"4155415513":{"3338113436":1},"1616273011":{"2652767338":6},"4054732749":{"1887452986":10}},"components":{"0":{"collection":"","paletteId":0,"drawableId":0,"textureId":0},"1":{"collection":"","paletteId":0,"drawableId":31,"textureId":0},"2":{"collection":"","paletteId":0,"drawableId":79,"textureId":0},"3":{"collection":"","paletteId":0,"drawableId":41,"textureId":0},"4":{"collection":"","paletteId":0,"drawableId":58,"textureId":8},"5":{"collection":"","paletteId":0,"drawableId":0,"textureId":0},"6":{"collection":"","paletteId":0,"drawableId":1,"textureId":0},"7":{"collection":"","paletteId":0,"drawableId":0,"textureId":0},"8":{"collection":"","paletteId":0,"drawableId":219,"textureId":0},"9":{"collection":"","paletteId":0,"drawableId":0,"textureId":0},"10":{"collection":"","paletteId":0,"drawableId":0,"textureId":0},"11":{"collection":"","paletteId":0,"drawableId":271,"textureId":2}},"model":1885233650,"headBlend":{"shapeFirst":0,"shapeSecond":18,"shapeThird":37,"skinFirst":0,"skinSecond":1,"skinThird":2,"hasParent":false,"shapeMix":0,"skinMix":0.42,"thirdMix":0.33},"eyeColor":4,"headOverlays":{"0":{"overlayValue":255,"firstColor":0,"overlayOpacity":1,"secondColor":0,"colorType":0},"1":{"overlayValue":10,"firstColor":61,"overlayOpacity":1,"secondColor":61,"colorType":1},"2":{"overlayValue":30,"firstColor":61,"overlayOpacity":1,"secondColor":61,"colorType":1},"3":{"overlayValue":255,"firstColor":0,"overlayOpacity":1,"secondColor":0,"colorType":0},"4":{"overlayValue":255,"firstColor":0,"overlayOpacity":1,"secondColor":0,"colorType":0},"5":{"overlayValue":3,"firstColor":24,"overlayOpacity":0.11,"secondColor":24,"colorType":2},"6":{"overlayValue":255,"firstColor":0,"overlayOpacity":1,"secondColor":0,"colorType":0},"7":{"overlayValue":3,"firstColor":0,"overlayOpacity":0.59,"secondColor":0,"colorType":0},"8":{"overlayValue":3,"firstColor":24,"overlayOpacity":0.11,"secondColor":24,"colorType":2},"9":{"overlayValue":255,"firstColor":0,"overlayOpacity":1,"secondColor":0,"colorType":0},"10":{"overlayValue":0,"firstColor":61,"overlayOpacity":0.64,"secondColor":61,"colorType":1},"11":{"overlayValue":255,"firstColor":0,"overlayOpacity":1,"secondColor":0,"colorType":0},"12":{"overlayValue":255,"firstColor":0,"overlayOpacity":1,"secondColor":0,"colorType":0}},"props":{"0":{"collection":"","drawableId":294,"textureId":0},"1":{"collection":"","drawableId":-1,"textureId":0},"2":{"collection":"","drawableId":32,"textureId":0},"6":{"collection":"","drawableId":-1,"textureId":0},"7":{"collection":"","drawableId":-1,"textureId":0}}};
+  const SAVED_F = {"faceFeatures":{"0":-0.08727122932972,"1":-0.02459981167608,"2":-0.18342847054669,"3":0,"4":-0.26553672316384,"5":0,"6":0,"7":0,"8":-0.32262241054613,"9":0,"10":0.21280602636534,"11":0.80615547578414,"12":-0.34208203377861,"13":0.04078149826399,"14":0.3018301653622,"15":0,"16":0,"17":-0.03578154425612,"18":-0.51918549905838,"19":0},"components":{"0":{"textureId":0,"paletteId":0,"drawableId":0,"collection":""},"1":{"drawableId":0,"textureId":0,"collection":""},"2":{"textureId":0,"paletteId":0,"drawableId":76,"collection":"mp_f_civ3"},"3":{"textureId":0,"paletteId":0,"drawableId":56,"collection":"mp_f_civ3"},"4":{"textureId":0,"paletteId":0,"drawableId":31,"collection":"mp_f_civ3"},"5":{"textureId":0,"paletteId":0,"drawableId":16,"collection":"mp_f_civ1"},"6":{"textureId":1,"paletteId":0,"drawableId":33,"collection":"mp_f_civ1"},"7":{"textureId":0,"paletteId":0,"drawableId":10,"collection":"mp_f_civ1"},"8":{"textureId":0,"paletteId":0,"drawableId":58,"collection":"mp_f_civ1"},"9":{"textureId":0,"paletteId":0,"drawableId":0,"collection":""},"10":{"textureId":2,"paletteId":0,"drawableId":1,"collection":"mp_f_civ1"},"11":{"textureId":3,"paletteId":0,"drawableId":107,"collection":"mp_f_40_civ4"}},"props":{"0":{"drawableId":-1,"textureId":-1,"collection":""},"1":{"drawableId":1,"textureId":2,"collection":""},"2":{"drawableId":-1,"textureId":-1,"collection":""},"3":{"drawableId":-1,"textureId":-1,"collection":""},"4":{"drawableId":-1,"textureId":-1,"collection":""},"5":{"drawableId":-1,"textureId":-1,"collection":""},"6":{"drawableId":-1,"textureId":-1,"collection":""},"7":{"drawableId":-1,"textureId":-1,"collection":""}},"model":-1667301416,"headOverlays":{"0":{"firstColor":0,"secondColor":0,"overlayValue":255,"overlayOpacity":1,"colorType":0},"1":{"firstColor":0,"secondColor":0,"overlayValue":255,"overlayOpacity":1,"colorType":0},"2":{"firstColor":8,"secondColor":3,"overlayValue":30,"overlayOpacity":1,"colorType":1},"3":{"firstColor":0,"secondColor":0,"overlayValue":255,"overlayOpacity":1,"colorType":0},"4":{"firstColor":56,"secondColor":63,"overlayValue":0,"overlayOpacity":0.96,"colorType":2},"5":{"firstColor":62,"secondColor":55,"overlayValue":6,"overlayOpacity":0.26,"colorType":2},"6":{"firstColor":0,"secondColor":0,"overlayValue":255,"overlayOpacity":1,"colorType":0},"7":{"firstColor":0,"secondColor":0,"overlayValue":3,"overlayOpacity":0.49,"colorType":0},"8":{"firstColor":12,"secondColor":55,"overlayValue":4,"overlayOpacity":0.73,"colorType":2},"9":{"firstColor":0,"secondColor":0,"overlayValue":0,"overlayOpacity":0.63,"colorType":0},"10":{"firstColor":0,"secondColor":0,"overlayValue":255,"overlayOpacity":1,"colorType":0},"11":{"firstColor":0,"secondColor":0,"overlayValue":255,"overlayOpacity":1,"colorType":0},"12":{"firstColor":0,"secondColor":0,"overlayValue":255,"overlayOpacity":1,"colorType":0}},"hairColor":{"highlightColorId":45,"colorId":17},"headBlend":{"shapeFirst":21,"shapeSecond":69,"shapeThird":88,"skinFirst":14,"skinSecond":40,"skinThird":27,"hasParent":false,"shapeMix":0.72,"skinMix":0.59,"thirdMix":0.38},"tattoos":[],"eyeColor":45};
+  const EXAMPLES = { male:SAVED, female:SAVED_F };
+  const MODEL_HASH = { male:1885233650, female:-1667301416 };
+  const genderOf = model => { const m = String(model);
+    if (m === '-1667301416' || m === '2627665880' || m === 'mp_f_freemode_01') return 'female';
+    if (m === '1885233650' || m === 'mp_m_freemode_01') return 'male';
+    return null; };
+
+  // Creator box -> stored face feature index. s = sign flip the creator applies.
+  const FEATS = [
+    {name:'Eyebrows',       x:{l:'Lower ↔ Higher',      i:6,  s:-1}, y:{l:'Back ↔ Forward',     i:7,  s:1}},
+    {name:'Nose',           x:{l:'Narrow ↔ Wide',       i:0,  s:1},  y:{l:'Short ↔ Long',       i:1,  s:1}},
+    {name:'Nose tip',       x:{l:'Curve down ↔ up',     i:2,  s:1},  y:{l:'Down ↔ Up',          i:4,  s:1}},
+    {name:'Nose profile',   x:{l:'Curved left ↔ right', i:5,  s:1},  y:{l:'Curved out ↔ in',    i:3,  s:1}},
+    {name:'Cheekbones',     x:{l:'Wide ↔ Narrow',       i:10, s:1},  y:{l:'High ↔ Low',         i:8,  s:1}},
+    {name:'Chin',           x:{l:'Short ↔ Long',        i:16, s:1},  y:{l:'Low ↔ High',         i:15, s:1}},
+    {name:'Chin shape',     x:{l:'Narrow ↔ Wide',       i:17, s:1},  y:{l:'Shallow ↔ Deep',     i:18, s:1}},
+    {name:'Jaw',            x:{l:'Narrow ↔ Wide',       i:13, s:1},  y:{l:'Round ↔ Square',     i:14, s:1}},
+    {name:'Cheek sideways', x:{l:'Small ↔ Large',       i:9,  s:1},  y:{l:'Thin ↔ Thick neck',  i:19, s:1}},
+    {name:'Other',          x:{l:'Thin ↔ Thick lips',   i:12, s:-1}, y:{l:'Small ↔ Large eyes', i:11, s:-1}}
+  ];
+  // pal: 0 none, 1 hair palette, 2 makeup palette
+  const OVERLAYS = [
+    {id:0,name:'Blemishes',max:24,pal:0},{id:1,name:'Facial hair',max:29,pal:1},{id:2,name:'Eyebrows',max:34,pal:1},
+    {id:3,name:'Ageing',max:15,pal:0},{id:4,name:'Makeup',max:95,pal:2},{id:5,name:'Blush',max:33,pal:2},
+    {id:6,name:'Complexion',max:12,pal:0},{id:7,name:'Scars',max:11,pal:0},{id:8,name:'Lipstick',max:10,pal:2},
+    {id:9,name:'Freckles',max:18,pal:0},{id:10,name:'Chest hair',max:17,pal:1},{id:11,name:'Body blemish',max:12,pal:0},
+    {id:12,name:'Add body blemish',max:2,pal:0}
+  ];
+  const COMPS = [
+    {id:0,name:'Head',code:'HEAD'},{id:1,name:'Masks',code:'BERD'},{id:3,name:'Arms',code:'UPPR'},
+    {id:4,name:'Pants',code:'LOWR'},{id:5,name:'Bags & parachutes',code:'HAND'},{id:6,name:'Shoes',code:'FEET'},
+    {id:7,name:'Chains',code:'TEEF'},{id:8,name:'Undershirts',code:'ACCS'},{id:9,name:'Vests',code:'TASK'},
+    {id:10,name:'Decals',code:'DECL'},{id:11,name:'Overshirts',code:'JBIB'}
+  ];
+  const PROPS = [
+    {id:0,name:'Hats',code:'HEAD_P'},{id:1,name:'Glasses',code:'EYES'},{id:2,name:'Ears',code:'EARS'},
+    {id:6,name:'Left wrist',code:'LEFTWRIST'},{id:7,name:'Right wrist',code:'RIGHTWRIST'}
+  ];
+
+  const P = id => $('pe-' + id);
+  const r2 = v => { const n = Math.round(Number(v || 0) * 100) / 100; return n === 0 ? 0 : n; };
+  const int = v => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const pct = v => Math.round(v * 100), unpct = v => r2(clamp(v, 0, 100) / 100);
+  // keep the exact imported value if the form still shows the same number for it
+  const keep = (orig, ui, toUi, fromUi) => (typeof orig === 'number' && toUi(orig) === ui) ? orig : fromUi(ui);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]));
+
+  let base = {}, tattoos = {}, tab = 'male';
+  const msg = t => { P('msg').textContent = t; clearTimeout(msg.h); msg.h = setTimeout(() => P('msg').textContent = '', 2600); };
+
+  const field = (id, label, type = 'number', extra = '') => `<div><label for="pe-${id}">${label}</label><input type="${type}" id="pe-${id}" ${extra}></div>`;
+  const colour = (id, label, pal) => `<div><label for="pe-${id}">${label}</label><div class="pe-col"><input type="number" id="pe-${id}" min="0" max="63"><div class="pe-sw" data-for="${id}" data-pal="${pal}" title="Pick colour"></div></div></div>`;
+
+  function build(){
+    P('dna').innerHTML = field('shapeFirst', 'Primary face: shape') + field('skinFirst', 'Primary face: skin') +
+      field('shapeSecond', 'Secondary face: shape') + field('skinSecond', 'Secondary face: skin') +
+      field('shapeThird', 'Third face: shape') + field('skinThird', 'Third face: skin') + field('eyeColor', 'Eye colour');
+    P('mix').innerHTML = field('shapeMix', 'Shape mix', 'number', 'min="0" max="100"') + field('skinMix', 'Colour mix', 'number', 'min="0" max="100"') + field('thirdMix', 'Third mix', 'number', 'min="0" max="100"');
+    P('feat').innerHTML = FEATS.map((f, k) => `<div class="pe-fbox"><b>${f.name}</b><div class="pe-pair">${field('fx' + k, f.x.l, 'number', 'min="-100" max="100"')}${field('fy' + k, f.y.l, 'number', 'min="-100" max="100"')}</div></div>`).join('');
+    P('hair').innerHTML = field('hairStyle', 'Hair style') + field('hairVar', 'Variant') + colour('hairCol', 'Primary colour', 1) + colour('hairHi', 'Secondary colour', 1) +
+      field('hairCollection', 'Collection', 'text', 'placeholder="blank"');
+    P('ovs').innerHTML = OVERLAYS.map(o => `<div class="pe-ov" id="pe-ovrow${o.id}"><input type="checkbox" id="pe-ovOn${o.id}" aria-label="${o.name} on">
+      <div class="pe-nm">${o.name}<small>1 to ${o.max}</small></div>
+      <div class="pe-dim">${field('ovStyle' + o.id, 'Style', 'number', `min="1" max="${o.max}"`)}</div>
+      <div class="pe-dim">${field('ovOp' + o.id, 'Opacity', 'number', 'min="0" max="100"')}</div>
+      <div class="pe-dim">${o.pal ? colour('ovC1_' + o.id, 'Primary colour', o.pal) : ''}</div>
+      <div class="pe-dim">${o.pal ? colour('ovC2_' + o.id, 'Secondary colour', o.pal) : ''}</div></div>`).join('');
+    P('comps').innerHTML = COMPS.map(c => `<div class="pe-row"><div class="pe-nm">${c.name}<small>${c.code} · slot ${c.id}</small></div>
+      ${field('cD' + c.id, 'Component')}${field('cT' + c.id, 'Texture')}${field('cC' + c.id, 'Collection', 'text', 'placeholder="blank"')}</div>`).join('');
+    P('props').innerHTML = PROPS.map(p => `<div class="pe-row prop"><div class="pe-nm">${p.name}<small>${p.code} · prop ${p.id}</small></div>
+      <div><label for="pe-pN${p.id}">None</label><input type="checkbox" id="pe-pN${p.id}"></div>
+      ${field('pD' + p.id, 'Component', 'number', 'min="0"')}${field('pT' + p.id, 'Texture')}${field('pC' + p.id, 'Collection', 'text', 'placeholder="blank"')}</div>`).join('');
+  }
+
+  function load(obj, name){
+    base = JSON.parse(JSON.stringify(obj || {}));
+    const hb = base.headBlend || {}, ff = base.faceFeatures || {}, hc = base.hairColor || {}, ov = base.headOverlays || {}, cp = base.components || {}, pr = base.props || {};
+    tattoos = base.tattoos || {};
+    if (name !== undefined) P('name').value = name;
+    ['shapeFirst', 'skinFirst', 'shapeSecond', 'skinSecond', 'shapeThird', 'skinThird'].forEach(k => P(k).value = hb[k] ?? 0);
+    P('shapeMix').value = pct(hb.shapeMix ?? 0); P('skinMix').value = pct(hb.skinMix ?? 0); P('thirdMix').value = pct(hb.thirdMix ?? 0);
+    P('eyeColor').value = base.eyeColor ?? 0;
+    FEATS.forEach((f, k) => {
+      P('fx' + k).value = Math.round((ff[f.x.i] ?? 0) * 100 * f.x.s) || 0;
+      P('fy' + k).value = Math.round((ff[f.y.i] ?? 0) * 100 * f.y.s) || 0;
+    });
+    const h = cp['2'] || {};
+    P('hairStyle').value = h.drawableId ?? 0; P('hairVar').value = h.textureId ?? 0; P('hairCollection').value = h.collection ?? '';
+    P('hairCol').value = hc.colorId ?? 0; P('hairHi').value = hc.highlightColorId ?? 0;
+    OVERLAYS.forEach(o => {
+      const d = ov[o.id] || {}, on = d.overlayValue !== undefined && d.overlayValue !== 255;
+      P('ovOn' + o.id).checked = on;
+      P('ovStyle' + o.id).value = on ? d.overlayValue + 1 : 1;
+      P('ovOp' + o.id).value = on ? pct(d.overlayOpacity ?? 1) : 100;
+      if (o.pal){ P('ovC1_' + o.id).value = d.firstColor ?? 0; P('ovC2_' + o.id).value = d.secondColor ?? 0; }
+    });
+    COMPS.forEach(c => { const d = cp[c.id] || {}; P('cD' + c.id).value = d.drawableId ?? 0; P('cT' + c.id).value = d.textureId ?? 0; P('cC' + c.id).value = d.collection ?? ''; });
+    PROPS.forEach(p => { const d = pr[p.id] || {}, none = d.drawableId === undefined || d.drawableId < 0;
+      P('pN' + p.id).checked = none; P('pD' + p.id).value = none ? 0 : d.drawableId; P('pT' + p.id).value = d.textureId ?? 0; P('pC' + p.id).value = d.collection ?? ''; });
+    refresh();
+  }
+
+  function collect(){
+    const out = JSON.parse(JSON.stringify(base));
+    out.model = MODEL_HASH[tab];
+    const hb0 = base.headBlend || {};
+    out.headBlend = Object.assign({hasParent:false}, hb0, {
+      shapeFirst:int(P('shapeFirst').value), shapeSecond:int(P('shapeSecond').value), shapeThird:int(P('shapeThird').value),
+      skinFirst:int(P('skinFirst').value), skinSecond:int(P('skinSecond').value), skinThird:int(P('skinThird').value),
+      shapeMix:keep(hb0.shapeMix, int(P('shapeMix').value), pct, unpct),
+      skinMix:keep(hb0.skinMix, int(P('skinMix').value), pct, unpct),
+      thirdMix:keep(hb0.thirdMix, int(P('thirdMix').value), pct, unpct)
+    });
+    out.eyeColor = int(P('eyeColor').value);
+    const ff = {}, ff0 = base.faceFeatures || {};
+    FEATS.forEach((f, k) => [['x', 'fx'], ['y', 'fy']].forEach(([a, pre]) => {
+      const d = f[a];
+      ff[d.i] = keep(ff0[d.i], int(P(pre + k).value), v => Math.round(v * 100 * d.s) || 0, v => r2(clamp(v, -100, 100) / 100 * d.s));
+    }));
+    out.faceFeatures = {}; for (let i = 0; i < 20; i++) out.faceFeatures[i] = ff[i] ?? 0;
+    out.hairColor = {highlightColorId:int(P('hairHi').value), colorId:int(P('hairCol').value)};
+    const ov0 = base.headOverlays || {};
+    out.headOverlays = {};
+    OVERLAYS.forEach(o => {
+      if (P('ovOn' + o.id).checked){
+        const prev = ov0[o.id] || {}, prevOp = prev.overlayValue !== 255 ? prev.overlayOpacity : undefined;
+        out.headOverlays[o.id] = {overlayValue:Math.max(0, int(P('ovStyle' + o.id).value) - 1),
+          firstColor:o.pal ? int(P('ovC1_' + o.id).value) : 0, overlayOpacity:keep(prevOp, int(P('ovOp' + o.id).value), pct, unpct),
+          secondColor:o.pal ? int(P('ovC2_' + o.id).value) : 0, colorType:o.pal};
+      } else out.headOverlays[o.id] = {overlayValue:255, firstColor:0, overlayOpacity:1, secondColor:0, colorType:0};
+    });
+    const c0 = base.components || {};
+    out.components = {};
+    for (let i = 0; i < 12; i++){
+      const prev = c0[i] || {}, hair = i === 2;
+      const c = {collection:(hair ? P('hairCollection') : P('cC' + i)).value.trim(),
+        drawableId:int((hair ? P('hairStyle') : P('cD' + i)).value), textureId:int((hair ? P('hairVar') : P('cT' + i)).value)};
+      if (prev.paletteId !== undefined || !c0[i]) c.paletteId = prev.paletteId ?? 0;
+      out.components[i] = c;
+    }
+    const pr0 = base.props || {};
+    out.props = JSON.parse(JSON.stringify(pr0));   // keeps extra slots (3, 4, 5...)
+    PROPS.forEach(p => {
+      const none = P('pN' + p.id).checked, prev = pr0[p.id] || {};
+      const noneTex = (prev.drawableId === undefined || prev.drawableId < 0) && prev.textureId !== undefined ? prev.textureId : (tab === 'female' ? -1 : 0);
+      out.props[p.id] = {collection:none ? '' : P('pC' + p.id).value.trim(), drawableId:none ? -1 : int(P('pD' + p.id).value), textureId:none ? noneTex : int(P('pT' + p.id).value)};
+    });
+    out.tattoos = tattoos;
+    return out;
+  }
+
+  function refresh(){
+    OVERLAYS.forEach(o => P('ovrow' + o.id).classList.toggle('off', !P('ovOn' + o.id).checked));
+    PROPS.forEach(p => { const n = P('pN' + p.id).checked; ['pD', 'pT', 'pC'].forEach(k => P(k + p.id).disabled = n); });
+    document.querySelectorAll('#tool-ped .pe-sw').forEach(sw => {
+      const pal = sw.dataset.pal === '1' ? HAIR_PAL : MAKEUP_PAL, v = int(P(sw.dataset.for).value);
+      sw.style.background = pal[v] ? '#' + pal[v] : 'repeating-linear-gradient(45deg,#333 0 4px,#222 4px 8px)';
+    });
+    const n = Array.isArray(tattoos) ? tattoos.length : Object.values(tattoos).reduce((a, z) => a + Object.keys(z || {}).length, 0);
+    P('tatInfo').textContent = n ? `${n} tattoo${n === 1 ? '' : 's'} kept from import` : 'No tattoos';
+    const out = collect();
+    P('out').value = P('pretty').checked ? JSON.stringify(out, null, 2) : JSON.stringify(out);
+    store.set('ped.' + tab, {name:P('name').value, data:out}); store.set('ped.tab', tab);
+  }
+
+  function stored(g){ const s = store.get('ped.' + g, null); return s && s.data ? s : {name:'', data:EXAMPLES[g]}; }
+  function switchTab(g, obj, name){
+    tab = g;
+    document.querySelectorAll('#pe-tabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.g === g));
+    P('model').textContent = g === 'male' ? 'mp_m_freemode_01' : 'mp_f_freemode_01';
+    if (obj) load(obj, name ?? ''); else { const s = stored(g); load(s.data, s.name); }
+  }
+
+  function parse(txt){
+    let obj = JSON.parse(String(txt).trim());
+    if (typeof obj === 'string') obj = JSON.parse(obj);
+    if (obj && typeof obj.skin === 'string') obj = JSON.parse(obj.skin);
+    else if (obj && obj.skin && typeof obj.skin === 'object') obj = obj.skin;
+    if (!obj || typeof obj !== 'object' || !(obj.components || obj.headBlend || obj.faceFeatures)) throw new Error("that doesn't look like a ped JSON");
+    return obj;
+  }
+  function open(obj, name){
+    const g = genderOf(obj.model) || tab;
+    switchTab(g, obj, name);
+    return g;
+  }
+  function importText(txt){
+    try { const g = open(parse(txt)); msg(`Imported into the ${g} tab.`); }
+    catch(e){ msg("Couldn't import: " + e.message); }
+  }
+  const log = action => Hist.add({type:'ped', action, name:P('name').value.trim() || (tab === 'male' ? 'Male ped' : 'Female ped'), gender:tab, data:collect()});
+
+  // palette picker
+  let palTarget = null;
+  function openPal(id, palNum){
+    palTarget = id;
+    const pal = palNum === '1' ? HAIR_PAL : MAKEUP_PAL, cur = int(P(id).value);
+    P('palTitle').textContent = palNum === '1' ? 'Hair colour palette' : 'Makeup colour palette';
+    P('pgrid').innerHTML = pal.map((c, i) => `<div data-i="${i}" class="${i === cur ? 'sel' : ''}" style="background:#${c}">${i}</div>`).join('');
+    P('modal').classList.add('show');
+  }
+
+  build();
+  switchTab(store.get('ped.tab', 'male') === 'female' ? 'female' : 'male');
+
+  const sec = $('tool-ped');
+  sec.addEventListener('input', e => { if (e.target.id !== 'pe-paste') refresh(); });
+  sec.addEventListener('change', e => { if (e.target.id !== 'pe-file' && e.target.id !== 'pe-paste') refresh(); });
+  sec.addEventListener('click', e => {
+    const sw = e.target.closest('.pe-sw'); if (sw) return openPal(sw.dataset.for, sw.dataset.pal);
+    const cell = e.target.closest('#pe-pgrid div'); if (cell){ P(palTarget).value = cell.dataset.i; P('modal').classList.remove('show'); return refresh(); }
+    if (e.target.id === 'pe-modal') P('modal').classList.remove('show');
+    const t = e.target.closest('#pe-tabs button'); if (t && t.dataset.g !== tab) switchTab(t.dataset.g);
+  });
+  addEventListener('keydown', e => { if (e.key === 'Escape') P('modal').classList.remove('show'); });
+  P('file').addEventListener('change', e => { const f = e.target.files[0]; if (f) f.text().then(importText); e.target.value = ''; });
+  P('import').onclick = () => importText(P('paste').value);
+  P('example').onclick = () => { load(EXAMPLES[tab], ''); msg(`Loaded the ${tab} example.`); };
+  P('blank').onclick = () => { load({model:MODEL_HASH[tab], headBlend:{hasParent:false}, components:{}, props:{0:{drawableId:-1}, 1:{drawableId:-1}, 2:{drawableId:-1}, 6:{drawableId:-1}, 7:{drawableId:-1}}, headOverlays:{}, tattoos:tab === 'female' ? [] : {}}, ''); msg('Blank ped.'); };
+  P('clearCol').onclick = () => { COMPS.forEach(c => P('cC' + c.id).value = ''); P('hairCollection').value = ''; PROPS.forEach(p => P('pC' + p.id).value = ''); refresh(); };
+  P('clearTat').onclick = () => { tattoos = Array.isArray(tattoos) ? [] : {}; refresh(); };
+  P('copy').onclick = async () => {
+    const ok = await copyText(P('out').value), b = P('copy');
+    b.textContent = ok ? 'Copied' : 'Copy failed'; setTimeout(() => b.textContent = 'Copy JSON', 1400);
+    if (ok) log('Copied');
+  };
+  P('dl').onclick = () => {
+    const nm = (P('name').value.trim() || 'ped').replace(/[^\w-]+/g, '_');
+    download(nm + '.json', new Blob([P('out').value], {type:'application/json'}));
+    log('Downloaded');
+  };
+  const drop = P('drop');
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('hover'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('hover'); }));
+  drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) f.text().then(importText); });
+
+  return { open:(data, name) => open(data, name), describe:e => `${esc(e.gender === 'female' ? 'Female' : 'Male')} ped · ${esc(e.action || '')}` };
+})();
+
 /* ---------- Dashboard: recent tasks ---------- */
 (function(){
   let filter = 'all';
@@ -897,17 +1263,17 @@ function download(name, blob){
   const ago = ts => { const s = (Date.now() - ts) / 1000; if(s < 60) return 'Just now'; if(s < 3600) return Math.floor(s/60) + 'm ago'; if(s < 86400) return Math.floor(s/3600) + 'h ago'; if(s < 604800) return Math.floor(s/86400) + 'd ago'; return new Date(ts).toLocaleDateString(); };
   function render(){
     const all = Hist.all(), list = all.filter(e => filter === 'all' || e.type === filter), week = Date.now() - 6048e5;
-    $('dash-stats').innerHTML = [['Total tasks', all.length, ''], ['Vanity JSON', all.filter(e => e.type === 'vanity').length, 'v'], ['Items created', all.filter(e => e.type === 'item').length, 'i'], ['Last 7 days', all.filter(e => e.ts > week).length, '']]
+    $('dash-stats').innerHTML = [['Total tasks', all.length, ''], ['Vanity JSON', all.filter(e => e.type === 'vanity').length, 'v'], ['Items created', all.filter(e => e.type === 'item').length, 'i'], ['Peds', all.filter(e => e.type === 'ped').length, 'p'], ['Last 7 days', all.filter(e => e.ts > week).length, '']]
       .map(([l, n, c]) => `<div class="stat ${c}"><span>${l}</span><b>${n}</b></div>`).join('');
     $('dash-count').textContent = `(${all.length} of 100)`;
     $('dash-empty').hidden = list.length > 0; document.querySelector('.hhead').hidden = list.length === 0;
     document.querySelectorAll('#dash-filters button[data-f]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === filter));
     $('dash-clear').hidden = all.length === 0;
     $('dash-list').innerHTML = list.map(e => {
-      const v = e.type === 'vanity', d = e.data || {};
-      const item = v ? `<div><strong>${esc(e.name)}</strong><small>${e.action}${d.label ? ': ' + esc(d.label) : ''}${d.rarity ? ' · ' + esc(d.rarity) : ''}</small></div>`
+      const v = e.type === 'vanity' || e.type === 'ped', d = e.data || {};
+      const item = e.type === 'ped' ? `<div><strong>${esc(e.name)}</strong><small>${DMPed.describe(e)}</small></div>` : v ? `<div><strong>${esc(e.name)}</strong><small>${e.action}${d.label ? ': ' + esc(d.label) : ''}${d.rarity ? ' · ' + esc(d.rarity) : ''}</small></div>`
         : `<img class="thumb" alt="" src="${e.thumb}"><div><strong>${esc(e.title)}</strong><small>${esc(e.sub)}${e.url ? ' · <a href="' + esc(e.url) + '" target="_blank" rel="noopener">Uploaded</a>' : ''}</small></div>`;
-      return `<div class="hrow" data-id="${e.id}"><div><span class="tag ${e.type}">${v ? 'Vanity JSON' : 'Item Created'}</span></div><div class="hitem">${item}</div>
+      return `<div class="hrow" data-id="${e.id}"><div><span class="tag ${e.type}">${e.type === 'ped' ? 'Ped' : v ? 'Vanity JSON' : 'Item Created'}</span></div><div class="hitem">${item}</div>
         <div class="when" title="${esc(new Date(e.ts).toLocaleString())}">${ago(e.ts)}</div>
         <div class="hact"><button type="button" class="small" data-a="open">Re-open</button><button type="button" class="small" data-a="${v ? 'copy' : 'dl'}">${v ? 'Copy JSON' : 'Download PNG'}</button><button type="button" class="small" data-a="del" aria-label="Remove from history" title="Remove">&#10005;</button></div></div>`;
     }).join('');
@@ -920,7 +1286,8 @@ function download(name, blob){
     if(b.dataset.a === 'copy') return flash(await copyText(JSON.stringify(e.data, null, 2)) ? 'Copied' : 'Copy failed');
     if(b.dataset.a === 'dl'){ b.disabled = true; await DMItem.redownload(e.snap, e.logoId); b.disabled = false; return flash('Downloaded'); }
     if(b.dataset.a === 'open'){
-      if(e.type === 'vanity'){ location.hash = '#/vanity'; DMVanity.open(e.name, e.data); }
+      if(e.type === 'ped'){ location.hash = '#/ped'; DMPed.open(e.data, e.name); }
+      else if(e.type === 'vanity'){ location.hash = '#/vanity'; DMVanity.open(e.name, e.data); }
       else { location.hash = '#/item'; await DMItem.open(e.snap, e.logoId); }
     }
   });
